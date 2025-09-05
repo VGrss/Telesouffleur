@@ -1,0 +1,92 @@
+{
+  "app": {
+    "title": "Teleprompter"
+  },
+  "setup": {
+    "title": "Teleprompter Setup",
+    "width": {
+      "label": "Prompter Width",
+      "narrow": "Narrow",
+      "wide": "Wide",
+      "max": "Max"
+    },
+    "height": {
+      "label": "Prompter Height",
+      "high": "High",
+      "low": "Low"
+    },
+    "mirror": {
+      "label": "Reverse Mirror",
+      "normal": "Normal",
+      "mirrored": "Mirrored"
+    },
+    "fontSize": {
+      "label": "Font Size",
+      "big": "Big",
+      "small": "Small"
+    },
+    "colors": {
+      "label": "Colors",
+      "light": "Light",
+      "dark": "Dark",
+      "highContrast": "High Contrast"
+    },
+    "continue": "Continue"
+  },
+  "editor": {
+    "title": "Script Editor",
+    "placeholder": "Paste your script here...",
+    "import": "Import",
+    "download": "Download",
+    "clear": "Clear",
+    "importTooltip": "Import text file",
+    "downloadTooltip": "Download as text file",
+    "clearTooltip": "Clear script",
+    "clearConfirm": "Are you sure you want to clear the script?",
+    "noScriptToDownload": "No script to download",
+    "largeFileWarning": "This file is quite large ({chars} characters). Large files may affect performance. Continue loading?",
+    "stats": {
+      "words": "words",
+      "chars": "chars",
+      "estimated": "Est. {minutes} min read"
+    }
+  },
+  "controls": {
+    "play": "Play",
+    "pause": "Pause",
+    "stop": "Stop",
+    "speed": "Speed",
+    "jumpToTop": "Jump to top (Home)",
+    "jumpToEnd": "Jump to end (End)",
+    "font": "Font",
+    "margin": "Margin",
+    "mirror": "Mirror",
+    "text": "Text",
+    "background": "Background",
+    "position": "Position",
+    "shortcuts": "Shortcuts",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "fullscreen": "Fullscreen",
+    "toggleFullscreen": "Toggle fullscreen (F)",
+    "maximizeTooltip": "Maximize text area",
+    "restoreTooltip": "Restore layout"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "close": "Close shortcuts",
+    "gotIt": "Got it",
+    "list": {
+      "space": "Play / Pause",
+      "arrows": "Increase / Decrease speed",
+      "home": "Jump to top",
+      "end": "Jump to end",
+      "f": "Toggle fullscreen",
+      "f11": "Browser fullscreen",
+      "escape": "Close modals"
+    }
+  },
+  "prompter": {
+    "defaultText": "Paste your script in the editor to get started..."
+  }
+}

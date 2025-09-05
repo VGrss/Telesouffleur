@@ -1,0 +1,92 @@
+{
+  "app": {
+    "title": "Télésouffleur"
+  },
+  "setup": {
+    "title": "Configuration du Télésouffleur",
+    "width": {
+      "label": "Largeur du Télésouffleur",
+      "narrow": "Étroit",
+      "wide": "Large",
+      "max": "Maximum"
+    },
+    "height": {
+      "label": "Hauteur du Télésouffleur",
+      "high": "Haut",
+      "low": "Bas"
+    },
+    "mirror": {
+      "label": "Miroir Inversé",
+      "normal": "Normal",
+      "mirrored": "Miroir"
+    },
+    "fontSize": {
+      "label": "Taille de Police",
+      "big": "Grande",
+      "small": "Petite"
+    },
+    "colors": {
+      "label": "Couleurs",
+      "light": "Clair",
+      "dark": "Sombre",
+      "highContrast": "Contraste Élevé"
+    },
+    "continue": "Continuer"
+  },
+  "editor": {
+    "title": "Éditeur de Script",
+    "placeholder": "Collez votre script ici...",
+    "import": "Importer",
+    "download": "Télécharger",
+    "clear": "Effacer",
+    "importTooltip": "Importer un fichier texte",
+    "downloadTooltip": "Télécharger comme fichier texte",
+    "clearTooltip": "Effacer le script",
+    "clearConfirm": "Êtes-vous sûr de vouloir effacer le script ?",
+    "noScriptToDownload": "Aucun script à télécharger",
+    "largeFileWarning": "Ce fichier est assez volumineux ({chars} caractères). Les gros fichiers peuvent affecter les performances. Continuer le chargement ?",
+    "stats": {
+      "words": "mots",
+      "chars": "caractères",
+      "estimated": "Est. {minutes} min de lecture"
+    }
+  },
+  "controls": {
+    "play": "Lecture",
+    "pause": "Pause",
+    "stop": "Arrêt",
+    "speed": "Vitesse",
+    "jumpToTop": "Aller au début (Début)",
+    "jumpToEnd": "Aller à la fin (Fin)",
+    "font": "Police",
+    "margin": "Marge",
+    "mirror": "Miroir",
+    "text": "Texte",
+    "background": "Arrière-plan",
+    "position": "Position",
+    "shortcuts": "Raccourcis",
+    "maximize": "Maximiser",
+    "restore": "Restaurer",
+    "fullscreen": "Plein écran",
+    "toggleFullscreen": "Basculer en plein écran (F)",
+    "maximizeTooltip": "Maximiser la zone de texte",
+    "restoreTooltip": "Restaurer la mise en page"
+  },
+  "shortcuts": {
+    "title": "Raccourcis Clavier",
+    "close": "Fermer les raccourcis",
+    "gotIt": "Compris",
+    "list": {
+      "space": "Lecture / Pause",
+      "arrows": "Augmenter / Diminuer la vitesse",
+      "home": "Aller au début",
+      "end": "Aller à la fin",
+      "f": "Basculer en plein écran",
+      "f11": "Plein écran navigateur",
+      "escape": "Fermer les modales"
+    }
+  },
+  "prompter": {
+    "defaultText": "Collez votre script dans l'éditeur pour commencer..."
+  }
+}
