@@ -1,8 +1,12 @@
 {
   "name": "teleprompter",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A modern, professional web-based teleprompter application with smooth scrolling, keyboard controls, and customizable settings",
   "type": "module",
+  "keywords": ["teleprompter", "react", "typescript", "vite", "presentation", "scrolling", "accessibility"],
+  "author": "Victor Gross",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
