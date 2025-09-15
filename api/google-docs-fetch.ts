@@ -10,100 +10,118 @@ function isValidGoogleDocsUrl(url: string): boolean {
   try {
     const urlObj = new URL(url);
     return urlObj.hostname === 'docs.google.com' && 
-           urlObj.pathname.includes('/document/d/') &&
-           urlObj.pathname.includes('/edit');
+           urlObj.pathname.includes('/document/d/');
   } catch {
     return false;
   }
 }
 
-async function extractTextFromGoogleDocsHtml(html: string): Promise<GoogleDocsContent> {
-  // Extract title from meta tags
-  const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
-  const title = titleMatch ? titleMatch[1] : 'Google Document';
-
-  // Extract description which often contains the main content
-  const descMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
-  const description = descMatch ? descMatch[1] : '';
-
-  // Try to extract content from various sources
-  let content = '';
-
-  // Method 1: Use the description if it's substantial, but preserve basic formatting
-  if (description && description.length > 20 && description !== 'Google Docs') {
-    content = description;
-  } else {
-    // Method 2: Try to find text content in the HTML with better formatting preservation
-    // Remove script and style tags
-    let cleanHtml = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-    cleanHtml = cleanHtml.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-    cleanHtml = cleanHtml.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
+function extractDocumentId(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/');
+    const docIndex = pathParts.indexOf('d');
     
-    // Convert HTML elements to preserve line breaks and paragraph structure
-    cleanHtml = cleanHtml
-      // Convert paragraph endings to double line breaks
-      .replace(/<\/p[^>]*>/gi, '\n\n')
-      // Convert line breaks to single line breaks
-      .replace(/<br\s*\/?>/gi, '\n')
-      // Convert div endings to line breaks (Google Docs uses divs for lines)
-      .replace(/<\/div[^>]*>/gi, '\n')
-      // Convert heading endings to double line breaks
-      .replace(/<\/h[1-6][^>]*>/gi, '\n\n')
-      // Convert list items to line breaks with bullets
-      .replace(/<li[^>]*>/gi, '• ')
-      .replace(/<\/li[^>]*>/gi, '\n')
-      // Remove all remaining HTML tags
-      .replace(/<[^>]*>/g, '');
-
-    // Extract text from common content areas if we find them
-    const contentMatches = cleanHtml.match(/class="[^"]*content[^"]*"[^>]*>([\s\S]*?)(?=<\/[^>]*>|$)/gi);
-    if (contentMatches && contentMatches.length > 0) {
-      content = contentMatches
-        .map(match => match.replace(/<[^>]*>/g, ''))
-        .join('\n')
-        .trim();
-    } else {
-      content = cleanHtml.trim();
+    if (docIndex >= 0 && docIndex + 1 < pathParts.length) {
+      return pathParts[docIndex + 1];
     }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
 
-    // If still no good content, try a more aggressive approach
-    if (!content || content.length < 10) {
-      // Look for the main document content div/span patterns
-      const docContentMatch = html.match(/<div[^>]*class="[^"]*kix-[^"]*"[^>]*>([\s\S]*?)<\/div>/gi);
-      if (docContentMatch) {
-        content = docContentMatch
-          .map(match => {
-            return match
-              .replace(/<\/p[^>]*>/gi, '\n\n')
-              .replace(/<br\s*\/?>/gi, '\n')
-              .replace(/<\/div[^>]*>/gi, '\n')
-              .replace(/<\/span[^>]*>/gi, '')
-              .replace(/<[^>]*>/g, '')
-              .trim();
-          })
-          .filter(text => text.length > 0)
-          .join('\n\n');
-      }
-    }
+async function extractTextFromGoogleDocsHtml(html: string): Promise<GoogleDocsContent> {
+  // Extract title from HTML title tag or head title
+  let title = 'Google Document';
+  const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+  if (titleMatch) {
+    title = titleMatch[1].replace(/ - Google Docs$/, '').trim();
   }
 
-  // Clean up the content while preserving line breaks
-  content = content
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    // Clean up excessive whitespace but preserve line breaks
-    .replace(/[ \t]+/g, ' ') // Multiple spaces/tabs to single space
-    .replace(/\n[ \t]+/g, '\n') // Remove spaces/tabs at start of lines
-    .replace(/[ \t]+\n/g, '\n') // Remove spaces/tabs at end of lines
-    .replace(/\n{3,}/g, '\n\n') // Maximum of 2 consecutive line breaks
-    .trim();
+  // The export HTML format is much cleaner and structured
+  // Find the main body content
+  let content = '';
+  
+  // Extract content from the body tag - export HTML has clean structure
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    let bodyContent = bodyMatch[1];
+    
+    // Remove style and script tags
+    bodyContent = bodyContent
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    
+    // Convert HTML elements to preserve document structure
+    content = bodyContent
+      // Convert headings with proper spacing
+      .replace(/<h[1-6][^>]*>/gi, '')
+      .replace(/<\/h[1-6][^>]*>/gi, '\n\n')
+      // Convert paragraphs to double line breaks
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<\/p[^>]*>/gi, '\n\n')
+      // Convert line breaks
+      .replace(/<br\s*\/?>/gi, '\n')
+      // Convert divs (preserve structure but add line breaks)
+      .replace(/<div[^>]*>/gi, '')
+      .replace(/<\/div[^>]*>/gi, '\n')
+      // Handle lists properly
+      .replace(/<ol[^>]*>/gi, '\n')
+      .replace(/<\/ol[^>]*>/gi, '\n')
+      .replace(/<ul[^>]*>/gi, '\n')
+      .replace(/<\/ul[^>]*>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '• ')
+      .replace(/<\/li[^>]*>/gi, '\n')
+      // Handle table structure
+      .replace(/<table[^>]*>/gi, '\n')
+      .replace(/<\/table[^>]*>/gi, '\n\n')
+      .replace(/<tr[^>]*>/gi, '')
+      .replace(/<\/tr[^>]*>/gi, '\n')
+      .replace(/<td[^>]*>/gi, '')
+      .replace(/<\/td[^>]*>/gi, ' | ')
+      .replace(/<th[^>]*>/gi, '')
+      .replace(/<\/th[^>]*>/gi, ' | ')
+      // Remove all other HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Decode HTML entities
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      // Clean up whitespace while preserving structure
+      .replace(/[ \t]+/g, ' ') // Multiple spaces/tabs to single space
+      .replace(/\n[ \t]+/g, '\n') // Remove spaces/tabs at start of lines
+      .replace(/[ \t]+\n/g, '\n') // Remove spaces/tabs at end of lines
+      .replace(/\n{3,}/g, '\n\n') // Maximum of 2 consecutive line breaks
+      .replace(/^\n+/, '') // Remove leading newlines
+      .replace(/\n+$/, '') // Remove trailing newlines
+      .trim();
+  }
 
-  // If we still don't have good content, try to get it from the URL directly
+  // Fallback: if body extraction fails, try to get any text content
   if (!content || content.length < 10) {
-    content = `Contenu du document Google Docs: ${title}\n\nPour accéder au contenu complet, veuillez copier le texte directement depuis le document Google Docs et le coller dans l'éditeur.`;
+    // Remove all HTML tags and extract plain text
+    content = html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Final fallback message
+  if (!content || content.length < 10) {
+    content = `Unable to extract content from Google Docs export.\n\nDocument title: ${title}\n\nPlease ensure the document is publicly accessible and try again, or copy the content manually.`;
   }
 
   const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
@@ -117,10 +135,22 @@ async function extractTextFromGoogleDocsHtml(html: string): Promise<GoogleDocsCo
 
 async function fetchGoogleDocsContent(url: string, res: VercelResponse) {
   try {
-    console.log(`Fetching Google Docs content from: ${url}`);
+    // Convert the viewer URL to export HTML URL
+    const docId = extractDocumentId(url);
+    if (!docId) {
+      return res.status(400).json({
+        error: 'Invalid Google Docs URL format',
+        details: 'Could not extract document ID from URL',
+        url: url
+      });
+    }
 
-    // Try to fetch the Google Docs page
-    const response = await fetch(url, {
+    // Use the export HTML endpoint instead of the viewer page
+    const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=html`;
+    console.log(`Fetching Google Docs export HTML from: ${exportUrl}`);
+
+    // Try to fetch the Google Docs export HTML
+    const response = await fetch(exportUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
