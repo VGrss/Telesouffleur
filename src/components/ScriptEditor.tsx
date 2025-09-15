@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
+import { fetchGoogleDocsContent } from '../lib/notionFetcher';
 
 interface ScriptEditorProps {
   script: string;
@@ -6,7 +7,8 @@ interface ScriptEditorProps {
 }
 
 export default function ScriptEditor({ script, onScriptChange }: ScriptEditorProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoadingGoogleDocs, setIsLoadingGoogleDocs] = useState(false);
+  const [googleDocsError, setGoogleDocsError] = useState('');
 
   // Auto-save to localStorage with debouncing
   useEffect(() => {
@@ -35,91 +37,72 @@ export default function ScriptEditor({ script, onScriptChange }: ScriptEditorPro
   // Rough reading time estimate (assuming ~200 words per minute for teleprompter reading)
   const estimatedMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
-  const handleClear = () => {
-    if (confirm('Are you sure you want to clear the script?')) {
-      onScriptChange('');
-      localStorage.removeItem('teleprompter-script');
-      localStorage.removeItem('teleprompter-script-timestamp');
-    }
-  };
 
-  const handleDownload = () => {
-    if (!script.trim()) {
-      alert('No script to download');
-      return;
-    }
-
-    const blob = new Blob([script], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `teleprompter-script-${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      if (content) {
-        // Check file size (warn if > 300k chars)
-        if (content.length > 300000) {
-          const proceed = confirm(
-            `This file is quite large (${content.length.toLocaleString()} characters). ` +
-            'Large files may affect performance. Continue loading?'
-          );
-          if (!proceed) return;
-        }
-        onScriptChange(content);
-      }
-    };
-    reader.readAsText(file);
+  const handleTelesoufflerScriptLoad = async () => {
+    const telesoufflerUrl = 'https://docs.google.com/document/d/1qUiOvvlkHJ2aVxtmnJzFdh53wBC6c-zlEH644ntN95E/edit?tab=t.0';
     
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    setIsLoadingGoogleDocs(true);
+    setGoogleDocsError('');
+
+    try {
+      const content = await fetchGoogleDocsContent(telesoufflerUrl);
+      
+      // Confirm before replacing existing script
+      if (script.trim()) {
+        const proceed = confirm(
+          `This will replace your current script (${script.split(/\s+/).length} words) ` +
+          `with the Telesouffler script "${content.title}" (${content.wordCount} words). Continue?`
+        );
+        if (!proceed) return;
+      }
+
+      onScriptChange(content.content);
+      alert(`Successfully loaded Telesouffler script "${content.title}" (${content.wordCount} words)`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load Telesouffler script';
+      setGoogleDocsError(errorMessage);
+    } finally {
+      setIsLoadingGoogleDocs(false);
     }
   };
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
 
   return (
     <div className="h-full flex flex-col p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Script Editor</h2>
-        <div className="flex space-x-2">
-          <button
-            onClick={handleImportClick}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-            title="Import text file"
-          >
-            📁 Import
-          </button>
-          <button
-            onClick={handleDownload}
-            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
-            title="Download as text file"
-            disabled={!script.trim()}
-          >
-            💾 Download
-          </button>
-          <button
-            onClick={handleClear}
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
-            title="Clear script"
-            disabled={!script.trim()}
-          >
-            🗑 Clear
-          </button>
+      <div className="flex flex-col mb-4">
+        <div className="flex items-center space-x-3 mb-2">
+          {/* Hexa Logo */}
+          <img 
+            src="https://cdn.prod.website-files.com/68623ac33982350852c8bf02/68623ac33982350852c8c20f_RUBIK-LONG-LIGHT%20(2).gif"
+            alt="Hexa Logo"
+            className="h-8 w-auto"
+          />
+          <div className="flex flex-col">
+            <h2 className="text-lg font-semibold text-gray-800">Hexa Telesouffleur</h2>
+            <p className="text-xs text-gray-500">powered by hexa.com</p>
+          </div>
         </div>
+      </div>
+
+      {/* Load Telesouffler Script */}
+      <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Load Telesouffler Script</h3>
+        <button
+          onClick={handleTelesoufflerScriptLoad}
+          disabled={isLoadingGoogleDocs}
+          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-2 rounded text-sm font-medium transition-colors w-full"
+        >
+          {isLoadingGoogleDocs ? '🔄 Loading...' : '📄 Load Telesouffler Script'}
+        </button>
+        {googleDocsError && (
+          <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm font-medium">Error loading Telesouffler script:</p>
+            <p className="text-red-700 text-sm mt-1">{googleDocsError}</p>
+          </div>
+        )}
+        <p className="text-xs text-gray-500 mt-2">
+          Click to load the official Telesouffler script content
+        </p>
       </div>
 
       <textarea
@@ -141,14 +124,6 @@ export default function ScriptEditor({ script, onScriptChange }: ScriptEditorPro
         </span>
       </div>
 
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".txt,.text"
-        onChange={handleFileImport}
-        className="hidden"
-      />
     </div>
   );
 }
