@@ -109,9 +109,10 @@ export default function ScriptEditor({ script, onScriptChange }: ScriptEditorPro
         value={script}
         onChange={(e) => onScriptChange(e.target.value)}
         placeholder="Paste your script here..."
-        className="flex-1 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+        className="flex-1 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono leading-relaxed"
         spellCheck={false}
         autoComplete="off"
+        style={{ whiteSpace: 'pre-wrap' }}
       />
 
       {/* Stats */}
